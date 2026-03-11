@@ -1,6 +1,12 @@
 # Point-LIO
 ## Point-LIO: Robust High-Bandwidth Lidar-Inertial Odometry
-# Point-LIO
+ 
+## Upstream
+
+- This project directly comes from: https://github.com/SMBU-PolarBear-Robotics-Team/point_lio/tree/RM2025_SMBU_auto_sentry
+- Special thanks to: https://github.com/hku-mars/Point-LIO
+- Current remote: https://github.com/HY-LiYihan/Point-LIO.git
+
 ## 1. Introduction
 
 <div align="center">
@@ -82,16 +88,15 @@ Follow [livox_ros_driver Installation](https://github.com/Livox-SDK/livox_ros_dr
 - How to source? The easiest way is add the line ``` source $Licox_ros_driver_dir$/devel/setup.bash ``` to the end of file ``` ~/.bashrc ```, where ``` $Licox_ros_driver_dir$ ``` is the directory of the livox ros driver workspace (should be the ``` ws_livox ``` directory if you completely followed the livox official document).
 
 ## 4. Build
-Clone the repository and catkin_make:
+Clone the repository and build with colcon:
 
 ```
     cd ~/$A_ROS_DIR$/src
-    git clone https://github.com/hku-mars/Point-LIO.git
-    cd Point-LIO
-    git submodule update --init
-    cd ../..
-    catkin_make
-    source devel/setup.bash
+    git clone https://github.com/HY-LiYihan/Point-LIO.git
+    cd ..
+    rosdep install -r --from-paths src --ignore-src --rosdistro $ROS_DISTRO
+    colcon build --symlink-install -DCMAKE_BUILD_TYPE=Release
+    source install/setup.bash
 ```
 - Remember to source the livox_ros_driver before build (follow 3.3 **livox_ros_driver**)
 - If you want to use a custom build of PCL, add the following line to ~/.bashrc
