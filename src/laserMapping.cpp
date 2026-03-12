@@ -175,7 +175,7 @@ void publish_init_map(
   pcl::toROSMsg(*init_feats_world, laserCloudmsg);
 
   laserCloudmsg.header.stamp = get_ros_time(lidar_end_time);
-  laserCloudmsg.header.frame_id = "camera_init";
+  laserCloudmsg.header.frame_id = "odom";
   pubLaserCloudFullRes->publish(laserCloudmsg);
 }
 
@@ -188,7 +188,7 @@ void publish_global_map(
   sensor_msgs::msg::PointCloud2 laserCloudmsg;
   pcl::toROSMsg(*pcl_wait_save, laserCloudmsg);
   laserCloudmsg.header.stamp = get_ros_time(lidar_end_time);
-  laserCloudmsg.header.frame_id = "camera_init";
+  laserCloudmsg.header.frame_id = "odom";
   pubLaserCloudMap->publish(laserCloudmsg);
 }
 
@@ -202,7 +202,7 @@ void publish_frame_world(
     pcl::toROSMsg(*feats_down_world, laserCloudmsg);
 
     laserCloudmsg.header.stamp = get_ros_time(lidar_end_time);
-    laserCloudmsg.header.frame_id = "camera_init";
+    laserCloudmsg.header.frame_id = "odom";
     pubLaserCloudFullRes->publish(laserCloudmsg);
 
   }
@@ -288,7 +288,7 @@ void publish_odometry(
   const rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr & pubOdomAftMapped,
   std::shared_ptr<tf2_ros::TransformBroadcaster> & tf_br)
 {
-  odomAftMapped.header.frame_id = "camera_init";
+  odomAftMapped.header.frame_id = "odom";
   odomAftMapped.child_frame_id = "body";
   if (publish_odometry_without_downsample) {
     odomAftMapped.header.stamp = get_ros_time(time_current);
@@ -301,8 +301,8 @@ void publish_odometry(
 
   if (tf_send_en) {
     geometry_msgs::msg::TransformStamped transform;
-    transform.header.frame_id = "camera_init";
-    transform.child_frame_id = "aft_mapped";
+    transform.header.frame_id = "odom";
+    transform.child_frame_id = "laser_link";
     transform.transform.translation.x = odomAftMapped.pose.pose.position.x;
     transform.transform.translation.y = odomAftMapped.pose.pose.position.y;
     transform.transform.translation.z = odomAftMapped.pose.pose.position.z;
@@ -320,7 +320,7 @@ void publish_path(const rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubPat
   set_posestamp(msg_body_pose.pose);
   // msg_body_pose.header.stamp = ros::Time::now();
   msg_body_pose.header.stamp = get_ros_time(lidar_end_time);
-  msg_body_pose.header.frame_id = "camera_init";
+  msg_body_pose.header.frame_id = "odom";
   static int jjj = 0;
   jjj++;
   // if (jjj % 2 == 0) // if path is too large, the rvis will crash
@@ -343,7 +343,7 @@ int main(int argc, char ** argv)
   ivox_ = std::make_shared<IVoxType>(ivox_options_);
 
   path.header.stamp = get_ros_time(lidar_end_time);
-  path.header.frame_id = "camera_init";
+  path.header.frame_id = "odom";
 
   /*** variables definition for counting ***/
   int frame_num = 0;
@@ -410,8 +410,8 @@ int main(int argc, char ** argv)
   auto map_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
   auto pub_laser_cloud_map =
     nh->create_publisher<sensor_msgs::msg::PointCloud2>("Laser_map", map_qos);
-  auto pub_odom_aft_mapped =
-    nh->create_publisher<nav_msgs::msg::Odometry>("aft_mapped_to_init", 20);
+  auto pub_odom_laser_link =
+    nh->create_publisher<nav_msgs::msg::Odometry>("laser_link_to_init", 20);
   auto pub_path = nh->create_publisher<nav_msgs::msg::Path>("path", 20);
   auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(nh);
 
@@ -710,7 +710,7 @@ int main(int argc, char ** argv)
             if (publish_odometry_without_downsample) {
               /******* Publish odometry *******/
 
-              publish_odometry(pub_odom_aft_mapped, tf_broadcaster);
+              publish_odometry(pub_odom_laser_link, tf_broadcaster);
               if (runtime_pos_log) {
                 euler_cur = SO3ToEuler(kf_output.x_.rot);
                 fout_out << setw(20) << Measures.lidar_beg_time - first_lidar_time << " "
@@ -894,7 +894,7 @@ int main(int argc, char ** argv)
             if (publish_odometry_without_downsample) {
               /******* Publish odometry *******/
 
-              publish_odometry(pub_odom_aft_mapped, tf_broadcaster);
+              publish_odometry(pub_odom_laser_link, tf_broadcaster);
               if (runtime_pos_log) {
                 euler_cur = SO3ToEuler(kf_input.x_.rot);
                 fout_out << setw(20) << Measures.lidar_beg_time - first_lidar_time << " "
@@ -990,7 +990,7 @@ int main(int argc, char ** argv)
       //                     (euler_cur(0), euler_cur(1), euler_cur(2));
       /******* Publish odometry downsample *******/
       if (!publish_odometry_without_downsample) {
-        publish_odometry(pub_odom_aft_mapped, tf_broadcaster);
+        publish_odometry(pub_odom_laser_link, tf_broadcaster);
       }
 
       /*** add the feature points to map ***/
